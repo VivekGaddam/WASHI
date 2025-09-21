@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+langchain
+chromadb
+pydantic
+python-dotenv
+langchain-community
+ollama
