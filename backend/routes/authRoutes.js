@@ -23,12 +23,11 @@ router.post('/login', (req, res, next) => {
 // Google OAuth auth route
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// Google OAuth callback route
+
 router.get('/google/callback', passport.authenticate('google', {
   failureRedirect: '/auth/google/failure',
   session: true,
 }), (req, res) => {
-  // Issue JWT token to client after successful Google login
   const payload = { id: req.user.id, email: req.user.email };
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
   // For mobile app, you can send token as json or redirect with token as param
