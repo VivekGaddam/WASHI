@@ -1,7 +1,28 @@
 // app/(tabs)/_layout.tsx
-import { View, Text } from 'react-native';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
-  return <View style={{ flex: 1 }}>{children}</View>;
-};
-export default Layout;
+export default function TabsLayout() {
+  return (
+    <Tabs>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Explore",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search" color={color} size={size} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
