@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet,ScrollView } from "react-native";
 import MapComponent from "../../components/MapComponent";
 import BottomNavBar from "../../components/BottomNavBar";
 import CreatePost from "./CreatePost";
