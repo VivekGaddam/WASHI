@@ -39,21 +39,34 @@ export default function MapComponent() {
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
-    requestLocationPermission();
+    getLocation();
   }, []);
 
-  const requestLocationPermission = async () => {
+  const getLocation = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      // Check existing permission
+      const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      // Request permission if not granted
+      if (existingStatus !== "granted") {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
         Alert.alert(
           "Location Permission",
-          "Enable location to center the map.",
-          [{ text: "OK", onPress: () => setLoading(false) }]
+          "We need access to your location to show nearby reports."
         );
+        setLoading(false);
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+
+      // Fetch latest location
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
       setLocation(loc.coords);
       setLoading(false);
     } catch (error) {
@@ -82,7 +95,8 @@ export default function MapComponent() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>Civic Reports</Text>
+      {/* Header hidden in fullscreen */}
+      {!isFullScreen && <Text style={styles.headerTitle}>Civic Reports</Text>}
 
       {/* Fullscreen Map */}
       {isFullScreen && location && (
@@ -111,13 +125,15 @@ export default function MapComponent() {
               </Marker>
             ))}
           </MapView>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setIsFullScreen(false)}>
-            <Ionicons name="close-circle" size={36} color="#fff" />
+
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => setIsFullScreen(false)}>
+            <Ionicons name="arrow-back" size={28} color="#fff" />
           </TouchableOpacity>
         </>
       )}
 
-      {/* Small map preview */}
+      {/* Small Map Preview */}
       {!isFullScreen && location && (
         <TouchableOpacity style={styles.smallMapContainer} onPress={() => setIsFullScreen(true)}>
           <MapView
@@ -161,7 +177,7 @@ const styles = StyleSheet.create({
   fullMap: { width: "100%", height: "100%" },
   smallMapContainer: {
     position: "absolute",
-    bottom: 20,
+    bottom: 80,
     left: 20,
     right: 20,
     height: 150,
@@ -182,14 +198,22 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  closeButton: { position: "absolute", top: 40, right: 20, zIndex: 10 },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 6,
+    borderRadius: 20,
+  },
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   loaderContent: { justifyContent: "center", alignItems: "center" },
   loaderText: { marginTop: 10, fontSize: 16, color: "#6C63FF" },
   customMarker: { padding: 6, borderRadius: 6 },
   infoPanel: {
     position: "absolute",
-    bottom: 180,
+    bottom: 240,
     left: 20,
     right: 20,
     backgroundColor: "#fff",
