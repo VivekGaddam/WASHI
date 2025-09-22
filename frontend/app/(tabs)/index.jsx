@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import App from "../pages/App.jsx"
+import Home from "../pages/screens/Home.jsx"
 
 const HomeScreen = () => {
   return (
-    <App/>
+    <Home/>
   )
 };
 export default HomeScreen;
