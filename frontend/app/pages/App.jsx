@@ -4,8 +4,6 @@ import MapComponent from "../../components/MapComponent";
 import BottomNavBar from "../../components/BottomNavBar";
 import CreatePost from "./CreatePost";
 import Profile from "./Profile";
-import RegisterForm from "../../components/RegisterForm"; 
-import LoginForm from "../../components/LoginForm";      
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Home");
@@ -19,13 +17,7 @@ export default function Home() {
       case "Profile":
         return <Profile />;
       default:
-        return (
-          <ScrollView contentContainerStyle={{ padding: 10 }}>
-            <MapComponent />
-            <RegisterForm />
-            <LoginForm />
-          </ScrollView>
-        );
+        return <MapComponent />;
     }
   };
 
