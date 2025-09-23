@@ -1,27 +1,67 @@
 import React, { createContext, useContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../config.js";
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
+  const login = async ({ email, password }) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Login failed and no JSON body' }));
+        console.error('Login failed with status:', res.status, 'and data:', errorData);
+        throw new Error(errorData.message || "Login failed");
+      }
+
+      const data = await res.json();
+      await AsyncStorage.setItem("token", data.token); // save token
+      setUser(data.user);
+    } catch (err) {
+      console.error('Network or other error during login:', err);
+      throw err;
+    }
+  };
+
+  const register = async ({ email, password, username, role, communityId }) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, username, role, communityId }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Registration failed and no JSON body' }));
+        console.error('Registration failed with status:', res.status, 'and data:', errorData);
+        throw new Error(errorData.message || "Registration failed");
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error('Network or other error during registration:', err);
+      throw err;
+    }
+  };
+
+
+  const logout = async () => {
+    await AsyncStorage.removeItem("token");
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login: () => {
-          setUser({ name: "Test User" });
-        },
-        logout: () => {
-          setUser(null);
-        },
-      }}
-    >
+    <AuthContext.Provider value={{ user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => useContext(AuthContext);
