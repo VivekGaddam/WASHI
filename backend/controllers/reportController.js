@@ -211,14 +211,6 @@ exports.getReportById = async (req, res, next) => {
   }
 };
 
-// @desc    Assign a department to a report
-// @route   PUT /api/reports/:id/assign
-// @access  Private/Admin
-exports.assignDepartment = async (req, res, next) => {
-  // TODO: Implement logic to assign department will go here
-  res.status(200).json({ success: true, message: `Placeholder for assigning department to report with ID: ${req.params.id}` });
-};
-
 // @desc    Update a report's status
 // @route   PUT /api/reports/:id/status
 // @access  Private/Admin
@@ -308,5 +300,33 @@ exports.addNoteToReport = async (req, res, next) => {
     res.status(201).json(addedNote);
   } catch (error) {
     next(error);
+  }
+};
+
+exports.likeReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    const userId = req.user.id;
+    const userIndex = report.likes.indexOf(userId);
+
+    if (userIndex === -1) {
+      // User has not liked the report yet, so add a like
+      report.likes.push(userId);
+    } else {
+      // User has already liked the report, so remove the like
+      report.likes.splice(userIndex, 1);
+    }
+
+    report.likeCount = report.likes.length;
+
+    const updatedReport = await report.save();
+    res.json(updatedReport);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

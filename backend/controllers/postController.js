@@ -134,3 +134,31 @@ exports.updateStatus = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.likeReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    const userId = req.user.id;
+    const userIndex = report.likes.indexOf(userId);
+
+    if (userIndex === -1) {
+      // User has not liked the report yet, so add a like
+      report.likes.push(userId);
+    } else {
+      // User has already liked the report, so remove the like
+      report.likes.splice(userIndex, 1);
+    }
+
+    report.likeCount = report.likes.length;
+
+    const updatedReport = await report.save();
+    res.json(updatedReport);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
