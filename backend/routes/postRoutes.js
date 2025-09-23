@@ -6,7 +6,8 @@ const {
   createReport,
   getFeed,
   addNote,
-  updateStatus
+  updateStatus,
+  likeReport
 } = require('../controllers/postController');
 
 router.post('/', protect, createReport);
@@ -15,6 +16,6 @@ router.get('/feed', protect, getFeed);
 
 router.post('/:id/notes', protect, addNote);
 
-router.patch('/:id/status', protect, updateStatus);
+router.post('/:id/like', protect, likeReport);
 
 module.exports = router;
