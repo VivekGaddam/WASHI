@@ -34,16 +34,16 @@ const ROLES = [
 export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "user",
-    communityId: null,
+    departmentName: "", // changed from communityId
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -51,152 +51,38 @@ export default function Register() {
 
   const validateForm = () => {
     const newErrors = {};
-    
-    // Username validation
-    if (!formData.username.trim()) {
-      newErrors.username = "Username is required";
-    }
-    
-    // Email validation
+
+    if (!formData.username.trim()) newErrors.username = "Username is required";
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
     }
-    
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } 
-    
-    // Confirm password validation
+
+    if (!formData.password) newErrors.password = "Password is required";
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
-    
-    // Community validation for admin role
-    if (formData.role === "admin" && !formData.communityId) {
-      newErrors.communityId = "Please select a community for admin role";
+
+    if (formData.role === "admin" && !formData.departmentName) {
+      newErrors.departmentName = "Please select a department for admin role";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async () => {
-    if (!validateForm()) {
-      Alert.alert("Validation Error", "Please fix the errors in the form");
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      // Prepare registration data
-      const registrationData = {
-        username: formData.username.trim(),
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
-        role: formData.role,
-        ...(formData.role === "admin" && { communityId: formData.communityId }),
-      };
-
-      // Here you would make an API call to register the user
-      // Example API call:
-      /*
-      const response = await fetch('YOUR_API_ENDPOINT/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registrationData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
-
-      const userData = await response.json();
-      */
-
-      // For demonstration, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate different responses based on data
-      if (formData.email === "test@existing.com") {
-        throw new Error("Email already exists");
-      }
-      
-      if (formData.username === "existinguser") {
-        throw new Error("Username already taken");
-      }
-
-      // Call the register function from your AuthContext
-      await register(registrationData);
-      
-      // Show success message
-      Alert.alert(
-        "Registration Successful", 
-        `Welcome ${formData.username}! Your account has been created successfully.`,
-        [
-          { 
-            text: "Continue", 
-            onPress: () => {
-              // Clear form
-              setFormData({
-                username: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-                role: "user",
-                communityId: null,
-              });
-              // Navigate to login or dashboard
-              router.replace("/(auth)/login");
-            }
-          }
-        ]
-      );
-      
-    } catch (error) {
-      console.error("Registration error:", error);
-      
-      // Handle specific error cases
-      let errorMessage = "Registration failed. Please try again.";
-      
-      if (error.message.includes("email")) {
-        errorMessage = "This email is already registered. Please use a different email or try logging in.";
-        setErrors({ email: "Email already exists" });
-      } else if (error.message.includes("username")) {
-        errorMessage = "This username is already taken. Please choose a different username.";
-        setErrors({ username: "Username already taken" });
-      } else if (error.message.includes("network") || error.message.includes("fetch")) {
-        errorMessage = "Network error. Please check your connection and try again.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      Alert.alert("Registration Failed", errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
-    
-    // Clear community selection when role changes from admin
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: "" }));
+
     if (field === "role" && value !== "admin") {
-      setFormData(prev => ({ ...prev, communityId: null }));
-      if (errors.communityId) {
-        setErrors(prev => ({ ...prev, communityId: "" }));
-      }
+      setFormData(prev => ({ ...prev, departmentName: "" }));
+      if (errors.departmentName) setErrors(prev => ({ ...prev, departmentName: "" }));
     }
   };
 
@@ -205,8 +91,8 @@ export default function Register() {
     setShowRoleModal(false);
   };
 
-  const selectCommunity = (communityId) => {
-    updateField("communityId", communityId);
+  const selectCommunity = (departmentName) => {
+    updateField("departmentName", departmentName);
     setShowCommunityModal(false);
   };
 
@@ -216,9 +102,7 @@ export default function Register() {
   };
 
   const getSelectedCommunityName = () => {
-    if (!formData.communityId) return "Select Community";
-    const community = COMMUNITIES.find(c => c.id === formData.communityId);
-    return community ? community.name : "Select Community";
+    return formData.departmentName || "Select Department";
   };
 
   const resetForm = () => {
@@ -228,17 +112,62 @@ export default function Register() {
       password: "",
       confirmPassword: "",
       role: "user",
-      communityId: null,
+      departmentName: "",
     });
     setErrors({});
   };
 
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      Alert.alert("Validation Error", "Please fix the errors in the form");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const registrationData = {
+        username: formData.username.trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        role: formData.role,
+        ...(formData.role === "admin" && { departmentName: formData.departmentName }),
+      };
+
+      // Call register function from your AuthContext
+      await register(registrationData);
+
+      Alert.alert(
+        "Registration Successful",
+        `Welcome ${formData.username}! Your account has been created successfully.`,
+        [
+          {
+            text: "Continue",
+            onPress: () => {
+              resetForm();
+              router.replace("/(auth)/login");
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Registration error:", error);
+      let errorMessage = error.message || "Registration failed. Please try again.";
+
+      if (error.message.includes("email")) setErrors({ email: "Email already exists" });
+      else if (error.message.includes("username")) setErrors({ username: "Username already taken" });
+
+      Alert.alert("Registration Failed", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -248,8 +177,9 @@ export default function Register() {
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join our community platform</Text>
           </View>
-          
+
           <View style={styles.form}>
+            {/* Username */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Username *</Text>
               <TextInput
@@ -258,13 +188,11 @@ export default function Register() {
                 value={formData.username}
                 onChangeText={(text) => updateField("username", text)}
                 autoCapitalize="none"
-                autoComplete="username"
-                autoCorrect={false}
-                maxLength={20}
               />
               {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
             </View>
-            
+
+            {/* Email */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email *</Text>
               <TextInput
@@ -274,12 +202,11 @@ export default function Register() {
                 onChangeText={(text) => updateField("email", text)}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
               />
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
-            
+
+            {/* Password */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password *</Text>
               <TextInput
@@ -288,13 +215,11 @@ export default function Register() {
                 value={formData.password}
                 onChangeText={(text) => updateField("password", text)}
                 secureTextEntry
-                autoComplete="password-new"
-                autoCorrect={false}
               />
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-              <Text style={styles.helpText}>Must be at least 6 characters with letters and numbers</Text>
             </View>
-            
+
+            {/* Confirm Password */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Confirm Password *</Text>
               <TextInput
@@ -303,73 +228,51 @@ export default function Register() {
                 value={formData.confirmPassword}
                 onChangeText={(text) => updateField("confirmPassword", text)}
                 secureTextEntry
-                autoComplete="password-new"
-                autoCorrect={false}
               />
               {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
             </View>
-            
+
+            {/* Role */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Role *</Text>
               <TouchableOpacity
                 style={[styles.selector, errors.role && styles.inputError]}
                 onPress={() => setShowRoleModal(true)}
-                activeOpacity={0.7}
               >
-                <Text style={[
-                  styles.selectorText, 
-                  formData.role === "user" ? {} : styles.selectedText
-                ]}>
-                  {getSelectedRoleLabel()}
-                </Text>
+                <Text style={styles.selectorText}>{getSelectedRoleLabel()}</Text>
                 <Text style={styles.arrow}>▼</Text>
               </TouchableOpacity>
-              {errors.role && <Text style={styles.errorText}>{errors.role}</Text>}
             </View>
-            
+
+            {/* Department for admin */}
             {formData.role === "admin" && (
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Community *</Text>
+                <Text style={styles.label}>Department *</Text>
                 <TouchableOpacity
-                  style={[styles.selector, errors.communityId && styles.inputError]}
+                  style={[styles.selector, errors.departmentName && styles.inputError]}
                   onPress={() => setShowCommunityModal(true)}
-                  activeOpacity={0.7}
                 >
-                  <Text style={[
-                    styles.selectorText,
-                    formData.communityId ? styles.selectedText : {}
-                  ]}>
-                    {getSelectedCommunityName()}
-                  </Text>
+                  <Text style={styles.selectorText}>{getSelectedCommunityName()}</Text>
                   <Text style={styles.arrow}>▼</Text>
                 </TouchableOpacity>
-                {errors.communityId && <Text style={styles.errorText}>{errors.communityId}</Text>}
-                <Text style={styles.helpText}>Select the department you will manage</Text>
+                {errors.departmentName && <Text style={styles.errorText}>{errors.departmentName}</Text>}
               </View>
             )}
           </View>
-          
+
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]} 
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleRegister}
               disabled={loading}
-              activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>
-                {loading ? "Creating Account..." : "Create Account"}
-              </Text>
+              <Text style={styles.buttonText}>{loading ? "Creating Account..." : "Create Account"}</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.clearButton} 
-              onPress={resetForm}
-              disabled={loading}
-            >
+            <TouchableOpacity style={styles.clearButton} onPress={resetForm} disabled={loading}>
               <Text style={styles.clearButtonText}>Clear Form</Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.linkContainer}>
             <Text style={styles.linkText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.back()}>
@@ -379,99 +282,44 @@ export default function Register() {
         </View>
       </ScrollView>
 
-      {/* Role Selection Modal */}
-      <Modal
-        visible={showRoleModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowRoleModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowRoleModal(false)}
-        >
+      {/* Role Modal */}
+      <Modal visible={showRoleModal} transparent animationType="slide" onRequestClose={() => setShowRoleModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowRoleModal(false)}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Select Your Role</Text>
-            <Text style={styles.modalSubtitle}>Choose the role that best describes you</Text>
-            
             {ROLES.map((role) => (
               <TouchableOpacity
                 key={role.value}
-                style={[
-                  styles.modalOption,
-                  formData.role === role.value && styles.selectedOption
-                ]}
+                style={[styles.modalOption, formData.role === role.value && styles.selectedOption]}
                 onPress={() => selectRole(role.value)}
-                activeOpacity={0.7}
               >
-                <Text style={[
-                  styles.modalOptionText,
-                  formData.role === role.value && styles.selectedOptionText
-                ]}>
+                <Text style={[styles.modalOptionText, formData.role === role.value && styles.selectedOptionText]}>
                   {role.label}
-                </Text>
-                <Text style={styles.roleDescription}>
-                  {role.value === "user" 
-                    ? "Regular user with standard access" 
-                    : "Administrator with community management access"}
                 </Text>
               </TouchableOpacity>
             ))}
-            
-            <TouchableOpacity
-              style={styles.modalCancel}
-              onPress={() => setShowRoleModal(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
 
-      {/* Community Selection Modal */}
-      <Modal
-        visible={showCommunityModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowCommunityModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowCommunityModal(false)}
-        >
+      {/* Department Modal */}
+      <Modal visible={showCommunityModal} transparent animationType="slide" onRequestClose={() => setShowCommunityModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCommunityModal(false)}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Select Community</Text>
-            <Text style={styles.modalSubtitle}>Choose the department you will manage as admin</Text>
-            
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalTitle}>Select Department</Text>
+            <ScrollView style={{ maxHeight: 300 }}>
               {COMMUNITIES.map((community) => (
                 <TouchableOpacity
                   key={community.id}
-                  style={[
-                    styles.modalOption,
-                    formData.communityId === community.id && styles.selectedOption
-                  ]}
-                  onPress={() => selectCommunity(community.id)}
-                  activeOpacity={0.7}
+                  style={[styles.modalOption, formData.departmentName === community.name && styles.selectedOption]}
+                  onPress={() => selectCommunity(community.name)}
                 >
-                  <Text style={[
-                    styles.modalOptionText,
-                    formData.communityId === community.id && styles.selectedOptionText
-                  ]}>
+                  <Text style={[styles.modalOptionText, formData.departmentName === community.name && styles.selectedOptionText]}>
                     {community.name}
                   </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            
-            <TouchableOpacity
-              style={styles.modalCancel}
-              onPress={() => setShowCommunityModal(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
