@@ -68,53 +68,35 @@ exports.createReport = async (req, res, next) => {
 // @route   GET /api/reports
 // @access  Private/Admin
 const _fetchReportsData = async (req, reportId = null) => {
-  const { status, category, priority, department, latitude, longitude, radius, page = 1, limit = 10 } = req.query;
+  const { status, category, priority, latitude, longitude, radius, page = 1, limit = 10 } = req.query;
   const filter = {};
 
-  if (reportId) {
-    filter._id = reportId;
-  }
+  if (reportId) filter._id = reportId;
   if (status) filter.status = status;
   if (category) filter.category = category;
   if (priority) filter.priority = priority;
 
-  if (department) {
-    const dept = await Department.findOne({ name: department });
-    if (dept) {
-      filter.assignedDepartment = dept._id;
-    } else {
-      return { reports: [], total: 0, pagination: {} }; // Return empty if department not found
-    }
-  }
-
   // Admin department filtering
-  if (req.user.role === 'admin' && req.user.department && req.user.department.length > 0) {
-    if (filter.assignedDepartment) {
-      if (!req.user.department.includes(filter.assignedDepartment.toString())) {
-        return { reports: [], total: 0, pagination: {} };
-      }
-    }
-    else {
-      filter.assignedDepartment = { $in: req.user.department };
-    }
+  // Only return reports assigned to admin's department
+  if (req.user.role === 'admin' && req.user.departmentId) {
+    filter.assignedDepartment = req.user.departmentId;
   }
 
-  // Admin location filtering
+  // Admin location filtering (optional)
   if (req.user && req.user.role === 'admin' && req.user.location && req.user.location.coordinates) {
-    const adminLat = req.user.location.coordinates[1]; // Assuming [longitude, latitude]
+    const adminLat = req.user.location.coordinates[1]; // [lng, lat]
     const adminLng = req.user.location.coordinates[0];
 
-    // Only apply admin location filter if no explicit location filter is provided in query
     if (!latitude && !longitude && !radius) {
       filter.location = {
         $geoWithin: {
-          $centerSphere: [[adminLng, adminLat], ADMIN_LOCATION_RADIUS_KM / 6378.1] // radius in radians
+          $centerSphere: [[adminLng, adminLat], ADMIN_LOCATION_RADIUS_KM / 6378.1]
         }
       };
     }
   }
 
-  // Location Filtering
+  // Explicit location filtering from query
   if (latitude && longitude && radius) {
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
@@ -126,7 +108,7 @@ const _fetchReportsData = async (req, reportId = null) => {
 
     filter.location = {
       $geoWithin: {
-        $centerSphere: [[lng, lat], rad / 6378.1] // radius in radians (km / Earth's radius in km)
+        $centerSphere: [[lng, lat], rad / 6378.1]
       }
     };
   }
@@ -136,31 +118,20 @@ const _fetchReportsData = async (req, reportId = null) => {
   const total = await Report.countDocuments(filter);
 
   const reports = await Report.find(filter)
-    .populate('user', 'fullName email')
+    .populate('user', 'username email')
     .populate('assignedDepartment', 'name')
-    .populate('notes.addedBy', 'fullName email')
+    .populate('notes.addedBy', 'username email')
     .sort('-createdAt')
     .skip(startIndex)
     .limit(limit);
 
   const pagination = {};
-
-  if (endIndex < total) {
-    pagination.next = {
-      page: parseInt(page) + 1,
-      limit: parseInt(limit)
-    };
-  }
-
-  if (startIndex > 0) {
-    pagination.prev = {
-      page: parseInt(page) - 1,
-      limit: parseInt(limit)
-    };
-  }
+  if (endIndex < total) pagination.next = { page: parseInt(page) + 1, limit: parseInt(limit) };
+  if (startIndex > 0) pagination.prev = { page: parseInt(page) - 1, limit: parseInt(limit) };
 
   return { reports, total, pagination };
 };
+
 
 // @desc    Get all reports with filtering
 // @route   GET /api/reports

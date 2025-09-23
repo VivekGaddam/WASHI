@@ -11,6 +11,8 @@ const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const postRoutes = require('./routes/postRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 require('./config/passport')(passport);
 
@@ -33,6 +35,7 @@ app.use('/auth', authRoutes);
 app.use('/reports', reportRoutes);
 app.use('/departments', departmentRoutes);
 app.use("/posts", postRoutes);
+app.use("/user", userRoutes);
 
 app.use((req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);

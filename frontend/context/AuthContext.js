@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
       const data = await res.json();
       await AsyncStorage.setItem("token", data.token); // save token
-      setUser(data.user);
+      setUser({ ...data.user, token: data.token });
     } catch (err) {
       console.error('Network or other error during login:', err);
       throw err;

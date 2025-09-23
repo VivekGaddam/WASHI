@@ -8,12 +8,33 @@ const {
   updateReportStatus,
   addNoteToReport
 } = require('../controllers/reportController');
-
+const Report = require('../models/Report');
 // Import middleware
 const {protect,admin} = require('../middlewares/authMiddleware.js');
-const { adminMiddleware } = require('../middlewares/adminMiddleware');
 
-// A logged-in user can create a report
+router.get("/all", async (req, res) => {
+  try {
+    const { search, category, status, priority } = req.query;
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (category) query.category = category;
+    if (status) query.status = status;
+    if (priority) query.priority = priority;
+
+    const reports = await Report.find(query).sort({ createdAt: -1 });
+    res.json(reports);
+  } catch (err) {
+    console.error("Error fetching reports:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.route('/')
   .post(protect, createReport);
 
