@@ -1,18 +1,14 @@
-// components/MapComponent.jsx
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 
-// Example civic reports
 const CIVIC_REPORTS = [
-  { id: 1, latitude: 17.3850, longitude: 78.4867, title: "Pothole on Main Road", description: "Dangerous pothole reported", type: "road" },
+  { id: 1, latitude: 17.385, longitude: 78.4867, title: "Pothole on Main Road", description: "Dangerous pothole reported", type: "road" },
   { id: 2, latitude: 17.4065, longitude: 78.4772, title: "Street Light Not Working", description: "Lights off near the market", type: "electric" },
   { id: 3, latitude: 17.3616, longitude: 78.4747, title: "Garbage Overflow", description: "Overflowing garbage bin", type: "sanitation" },
 ];
 
-// Marker icons
 const getMarkerIcon = (type) => {
   switch (type) {
     case "road": return "construct-outline";
@@ -22,7 +18,6 @@ const getMarkerIcon = (type) => {
   }
 };
 
-// Marker colors
 const getMarkerColor = (type) => {
   switch (type) {
     case "road": return "#E74C3C";
@@ -32,49 +27,8 @@ const getMarkerColor = (type) => {
   }
 };
 
-export default function MapComponent() {
-  const [location, setLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function MapComponent({ coords, isFullScreen, setIsFullScreen }) {
   const [selectedReport, setSelectedReport] = useState(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-
-  useEffect(() => {
-    getLocation();
-  }, []);
-
-  const getLocation = async () => {
-    try {
-      // Check existing permission
-      const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      // Request permission if not granted
-      if (existingStatus !== "granted") {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== "granted") {
-        Alert.alert(
-          "Location Permission",
-          "We need access to your location to show nearby reports."
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Fetch latest location
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setLocation(loc.coords);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Could not fetch your location.");
-      setLoading(false);
-    }
-  };
 
   const renderReportMarker = (report) => (
     <View style={[styles.customMarker, { backgroundColor: getMarkerColor(report.type) }]}>
@@ -82,75 +36,41 @@ export default function MapComponent() {
     </View>
   );
 
-  if (loading && !location) {
-    return (
-      <View style={styles.loaderContainer}>
-        <View style={styles.loaderContent}>
-          <Ionicons name="location-outline" size={48} color="#6C63FF" />
-          <Text style={styles.loaderText}>Finding your location...</Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      {/* Header hidden in fullscreen */}
-      {!isFullScreen && <Text style={styles.headerTitle}>Civic Reports</Text>}
-
-      {/* Fullscreen Map */}
-      {isFullScreen && location && (
-        <>
-          <MapView
-            style={styles.fullMap}
-            initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.08,
-              longitudeDelta: 0.08,
-            }}
-            showsUserLocation={true}
-            showsMyLocationButton={false}
-            showsPointsOfInterest={false}
+    <View style={isFullScreen ? StyleSheet.absoluteFill : styles.floatingMapContainer}>
+      <MapView
+        style={isFullScreen ? StyleSheet.absoluteFill : styles.floatingMap}
+        initialRegion={{
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: isFullScreen ? 0.08 : 0.01,
+          longitudeDelta: isFullScreen ? 0.08 : 0.01,
+        }}
+        showsUserLocation
+      >
+        {CIVIC_REPORTS.map((report) => (
+          <Marker
+            key={report.id}
+            coordinate={{ latitude: report.latitude, longitude: report.longitude }}
+            title={report.title}
+            description={report.description}
+            onPress={() => setSelectedReport(report)}
           >
-            {CIVIC_REPORTS.map((report) => (
-              <Marker
-                key={report.id}
-                coordinate={{ latitude: report.latitude, longitude: report.longitude }}
-                title={report.title}
-                description={report.description}
-                onPress={() => setSelectedReport(report)}
-              >
-                {renderReportMarker(report)}
-              </Marker>
-            ))}
-          </MapView>
+            {renderReportMarker(report)}
+          </Marker>
+        ))}
+      </MapView>
 
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backButton} onPress={() => setIsFullScreen(false)}>
-            <Ionicons name="arrow-back" size={28} color="#fff" />
-          </TouchableOpacity>
-        </>
+      {/* Fullscreen toggle */}
+      {!isFullScreen && (
+        <TouchableOpacity style={styles.expandButton} onPress={() => setIsFullScreen(true)}>
+          <Text style={styles.expandText}>Expand Map</Text>
+        </TouchableOpacity>
       )}
 
-      {/* Small Map Preview */}
-      {!isFullScreen && location && (
-        <TouchableOpacity style={styles.smallMapContainer} onPress={() => setIsFullScreen(true)}>
-          <MapView
-            style={styles.smallMap}
-            initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
-            showsUserLocation={true}
-          />
-          <Text style={styles.smallMapText}>Tap to expand</Text>
+      {isFullScreen && (
+        <TouchableOpacity style={styles.backButton} onPress={() => setIsFullScreen(false)}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
         </TouchableOpacity>
       )}
 
@@ -172,10 +92,7 @@ export default function MapComponent() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  headerTitle: { fontSize: 22, fontWeight: "bold", margin: 16 },
-  fullMap: { width: "100%", height: "100%" },
-  smallMapContainer: {
+  floatingMapContainer: {
     position: "absolute",
     bottom: 80,
     left: 20,
@@ -186,30 +103,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  smallMap: { width: "100%", height: "100%" },
-  smallMapText: {
+  floatingMap: {
+    width: "100%",
+    height: "100%",
+  },
+  expandButton: {
     position: "absolute",
     bottom: 10,
     left: 10,
-    color: "#fff",
-    fontWeight: "bold",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    backgroundColor: "#6C63FF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
+  expandText: { color: "#fff", fontWeight: "bold" },
   backButton: {
     position: "absolute",
     top: 40,
     left: 20,
-    zIndex: 10,
     backgroundColor: "rgba(0,0,0,0.5)",
     padding: 6,
     borderRadius: 20,
   },
-  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loaderContent: { justifyContent: "center", alignItems: "center" },
-  loaderText: { marginTop: 10, fontSize: 16, color: "#6C63FF" },
   customMarker: { padding: 6, borderRadius: 6 },
   infoPanel: {
     position: "absolute",

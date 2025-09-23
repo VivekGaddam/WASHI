@@ -1,34 +1,33 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String }, // hashed password for local auth
-  googleId: { type: String }, // for Google OAuth users
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
-  },
-  departments: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Department'
-  }],
-  location: {
-    type: {
+const UserSchema = new mongoose.Schema(
+  {
+    username: {
       type: String,
-      enum: ['Point'],
-      required: function() { return this.role === 'admin'; }
+      required: true,
+      unique: true,
     },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: function() { return this.role === 'admin'; }
-    }
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin", "volunteer"], // adjust roles as needed
+      default: "user",
+    },
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department", // reference to Department collection
+      default: null,
+    },
   },
-  isVerified: { type: Boolean, default: false },
-  emailVerificationToken: { type: String },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-UserSchema.index({ location: '2dsphere' });
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model("User", UserSchema);

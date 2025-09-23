@@ -9,13 +9,13 @@ const passport = require('passport');
 // --- Route Imports ---
 const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-
+const departmentRoutes = require('./routes/departmentRoutes');
+const postRoutes = require('./routes/postRoutes');
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 require('./config/passport')(passport);
 
 const app = express();
 
-// --- Core Middleware ---
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,12 +29,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// --- API Routes ---
 app.use('/auth', authRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/reports', reportRoutes);
+app.use('/departments', departmentRoutes);
+app.use("/posts", postRoutes);
 
-// --- Error Handling Middleware ---
-// 404 Not Found Handler
 app.use((req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
   res.status(404);

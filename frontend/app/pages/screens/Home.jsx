@@ -1,15 +1,18 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import MapComponent from "../../components/MapComponent.jsx";
+import { useAuth } from "../../../context/AuthContext";
+import NormalUserHome from "./NormalUserHome.jsx";
+import AdminHome from "./AdminHome.jsx";
 
 export default function Home() {
-  return (
-    <View style={styles.container}>
-      <MapComponent />
-    </View>
-  );
-}
+  const { user } = useAuth();
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-});
+  if (!user) return null; 
+
+  switch (user.role) {
+    case "admin":
+      return <AdminHome />;
+    case "user":
+    default:
+      return <NormalUserHome />;
+  }
+}
