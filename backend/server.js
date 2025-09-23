@@ -9,6 +9,7 @@ const passport = require('passport');
 // --- Route Imports ---
 const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 require('./config/passport')(passport);
@@ -32,6 +33,7 @@ app.use(passport.session());
 // --- API Routes ---
 app.use('/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // --- Error Handling Middleware ---
 // 404 Not Found Handler
