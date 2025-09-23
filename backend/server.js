@@ -52,6 +52,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+
 const PORT = process.env.PORT || 5001; // Using 5001 as the default
 
 const startServer = async () => {
