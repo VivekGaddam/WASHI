@@ -77,7 +77,8 @@ exports.getFeed = async (req, res) => {
           $maxDistance: 50000 // optional: 50km
         }
       }
-    }).populate('user', 'username email')
+    })
+      .populate('user', 'username email')
       .populate('assignedDepartment', 'name')
       .sort({ createdAt: -1 });
 
@@ -135,6 +136,9 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
+// @desc Like/Unlike a report
+// @route POST /api/reports/:id/like
+// @access Private
 exports.likeReport = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id);
@@ -160,5 +164,41 @@ exports.likeReport = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc Add a comment to a report
+// @route POST /api/reports/:id/comments
+// @access Private
+exports.addComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ message: 'Comment text cannot be empty' });
+    }
+
+    const report = await Report.findById(req.params.id);
+
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    const newComment = {
+      text: text,
+      user: req.user.id, // req.user is made available by the 'protect' middleware
+    };
+
+    report.comments.push(newComment);
+    await report.save();
+
+    // Populate user info before sending back the latest comment to the client
+    const populatedReport = await Report.findById(report._id).populate('comments.user', 'username');
+    const latestComment = populatedReport.comments[populatedReport.comments.length - 1];
+
+    res.status(201).json(latestComment);
+
+  } catch (error) {
+    console.error('Add Comment Error:', error);
+    res.status(500).json({ message: 'Server error while adding comment' });
   }
 };

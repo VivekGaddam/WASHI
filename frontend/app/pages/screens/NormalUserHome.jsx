@@ -1,26 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { 
-  View, 
-  StyleSheet, 
-  FlatList, 
-  Text, 
-  ActivityIndicator, 
-  TouchableOpacity,
-  RefreshControl,
-  Image,
-  Dimensions
+  View, StyleSheet, FlatList, Text, ActivityIndicator, 
+  TouchableOpacity, RefreshControl, Image, Dimensions
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MapComponent from "../../components/MapComponent.jsx";
+import CommentModal from "../../components/CommentModal.jsx";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@/config.js";
-import { useAuth } from "../../../context/AuthContext.js"; // <-- Import useAuth
+import { useAuth } from "../../../context/AuthContext.js";
+import { authFetch } from "@/utils/authFetch";
+
 
 const { width } = Dimensions.get('window');
 
 export default function NormalUserHome() {
-  const { user } = useAuth(); // <-- Get the currently logged-in user
+  const { user } = useAuth();
   const [coords, setCoords] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [reports, setReports] = useState([]);
@@ -28,22 +23,37 @@ export default function NormalUserHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [mapFullScreen, setMapFullScreen] = useState(false);
 
-  // Get user location
+  // --- NEW: State for managing the comment modal ---
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [isCommentModalVisible, setCommentModalVisible] = useState(false);
+
+  const fetchFeed = useCallback(async (lat, lng) => {
+    try {
+      setLoadingFeed(true);
+      const res = await authFetch(`${API_URL}/posts/feed?lat=${lat}&lng=${lng}`);
+      if(!res.ok) throw new Error("Failed to fetch feed");
+      const data = await res.json();
+      setReports(data);
+    } catch (err) {
+      console.error("Fetch Feed Error:", err);
+    } finally {
+      setLoadingFeed(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          // Handle case where location permission is denied
-          setCoords({ latitude: 17.3850, longitude: 78.4867 }); // Fallback to a default location
+          setCoords({ latitude: 17.3850, longitude: 78.4867 });
           return;
         }
-        const loc = await Location.getCurrentPositionAsync({});
+        let loc = await Location.getCurrentPositionAsync({});
         const newCoords = {
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
         };
-        await AsyncStorage.setItem("userLocation", JSON.stringify(newCoords));
         setCoords(newCoords);
       } catch (err) {
         console.error("Location Error:", err);
@@ -53,48 +63,17 @@ export default function NormalUserHome() {
     })();
   }, []);
 
-  // Fetch feed after location is ready
   useEffect(() => {
     if (coords) fetchFeed(coords.latitude, coords.longitude);
-  }, [coords]);
+  }, [coords, fetchFeed]);
 
-  async function fetchFeed(lat, lng) {
-    try {
-      setLoadingFeed(true);
-      const token = await AsyncStorage.getItem("token");
-      // Corrected endpoint to match backend controller for reports/posts
-      const res = await fetch(`${API_URL}/posts/feed?lat=${lat}&lng=${lng}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if(!res.ok) throw new Error("Failed to fetch feed");
-      const data = await res.json();
-      setReports(data);
-    } catch (err) {
-      console.error("Fetch Feed Error:", err);
-    } finally {
-      setLoadingFeed(false);
-    }
-  }
-  
-  // --- NEW: Function to handle liking/unliking a report ---
   const handleLike = async (reportId) => {
     try {
-      const token = await AsyncStorage.getItem("token");
-      // The endpoint is likely under /posts/ based on your feed endpoint
-      const res = await fetch(`${API_URL}/posts/${reportId}/like`, {
-        method: 'POST', // or PATCH
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await authFetch(`${API_URL}/posts/${reportId}/like`, {
+        method: 'POST',
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to update like status");
-      }
-
+      if (!res.ok) throw new Error("Failed to update like status");
       const updatedReport = await res.json();
-
-      // Update the local state to reflect the change immediately
       setReports(currentReports =>
         currentReports.map(report =>
           report._id === reportId ? updatedReport : report
@@ -102,16 +81,29 @@ export default function NormalUserHome() {
       );
     } catch (err) {
       console.error("Like Report Error:", err);
-      // Optionally show an alert to the user
     }
   };
-
 
   const onRefresh = async () => {
     if (!coords) return;
     setRefreshing(true);
     await fetchFeed(coords.latitude, coords.longitude);
     setRefreshing(false);
+  };
+
+  // --- NEW: Function to open the comment modal ---
+  const handleOpenComments = (report) => {
+    setSelectedReport(report);
+    setCommentModalVisible(true);
+  };
+  
+  // --- NEW: Function to close the modal and refresh feed ---
+  const handleCloseComments = () => {
+    setCommentModalVisible(false);
+    setSelectedReport(null);
+    if (coords) {
+      fetchFeed(coords.latitude, coords.longitude);
+    }
   };
 
   const getCategoryIcon = (category) => {
@@ -147,16 +139,13 @@ export default function NormalUserHome() {
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
     if (diffDays <= 1) return 'Today';
     if (diffDays <= 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
   };
 
   const renderPost = ({ item, index }) => {
-    // --- NEW: Check if the current user has liked this post ---
     const isLiked = user && item.likes.includes(user._id);
-
     return (
       <View style={[styles.postCard, { marginTop: index === 0 ? 160 : 0 }]}>
         {/* Post Header */}
@@ -188,17 +177,15 @@ export default function NormalUserHome() {
 
         {/* Post Actions */}
         <View style={styles.postActions}>
-          {/* --- MODIFIED: Vote button is now interactive --- */}
           <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item._id)}>
             <Ionicons name={isLiked ? "arrow-up-circle" : "arrow-up"} size={20} color={isLiked ? "#007AFF" : "#8E8E93"} />
-            <Text style={[styles.actionText, isLiked && { color: "#007AFF" }]}>
-              {item.likeCount || 0}
-            </Text>
+            <Text style={[styles.actionText, isLiked && { color: "#007AFF" }]}>{item.likeCount || 0}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionButton}>
+          {/* --- MODIFIED: Comment button now opens the modal --- */}
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleOpenComments(item)}>
             <Ionicons name="chatbubble-outline" size={18} color="#8E8E93" />
-            <Text style={styles.actionText}>Comment</Text>
+            <Text style={styles.actionText}>{item.comments?.length || 0}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>
@@ -214,7 +201,6 @@ export default function NormalUserHome() {
       </View>
     );
   };
-
 
   if (loadingLocation) {
     return (
@@ -264,6 +250,15 @@ export default function NormalUserHome() {
           coords={coords}
           isFullScreen={mapFullScreen}
           setIsFullScreen={setMapFullScreen}
+        />
+      )}
+
+      {/* Comment Modal */}
+      {selectedReport && (
+        <CommentModal 
+          report={selectedReport}
+          visible={isCommentModalVisible}
+          onClose={handleCloseComments}
         />
       )}
     </View>
