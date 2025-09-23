@@ -8,13 +8,19 @@ const bcrypt = require('bcryptjs');
 // Registration route
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password, role, communityId } = req.body;
+    const { username, email, password, role, departmentName } = req.body; // user sends departmentName
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
+
+    // Find department by name
+    // const department = await Department.findOne({ name: departmentName });
+    // if (!department) {
+    //   return res.status(400).json({ message: "Department not found" });
+    // }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -25,8 +31,7 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role,
-      communityId,
+      role // store the department id
     });
 
     await user.save();
@@ -39,7 +44,6 @@ router.post("/register", async (req, res) => {
 });
 
 
-// Local login route using passport
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);

@@ -21,9 +21,9 @@ const UserSchema = new mongoose.Schema(
       enum: ["user", "admin", "volunteer"], // adjust roles as needed
       default: "user",
     },
-    communityId: {
+    departmentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Community", // optional, if you have a Community collection
+      ref: "Department", // reference to Department collection
       default: null,
     },
   },

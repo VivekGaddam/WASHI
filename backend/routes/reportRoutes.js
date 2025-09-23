@@ -10,28 +10,28 @@ const {
 } = require('../controllers/reportController');
 
 // Import middleware
-const authMiddleware = require('../middlewares/authMiddleware');
+const {protect,admin} = require('../middlewares/authMiddleware.js');
 const { adminMiddleware } = require('../middlewares/adminMiddleware');
 
 // A logged-in user can create a report
 router.route('/')
-  .post(authMiddleware, createReport);
+  .post(protect, createReport);
 
 // An admin can get all reports
 router.route('/')
-  .get(authMiddleware, adminMiddleware, getReports);
+  .get(protect, admin, getReports);
 
 // Admin-only routes for specific reports
 router.route('/:id')
-  .get(authMiddleware, adminMiddleware, getReportById);
+  .get(protect, admin, getReportById);
 
 router.route('/:id/assign')
-  .put(authMiddleware, adminMiddleware, assignDepartment);
+  .put(protect, admin, assignDepartment);
 
 router.route('/:id/status')
-  .put(authMiddleware, adminMiddleware, updateReportStatus);
+  .put(protect, admin, updateReportStatus);
 
 router.route('/:id/notes')
-  .post(authMiddleware, adminMiddleware, addNoteToReport);
+  .post(protect, admin, addNoteToReport);
 
 module.exports = router;

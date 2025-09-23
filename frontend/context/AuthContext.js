@@ -30,12 +30,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async ({ email, password, username, role, communityId }) => {
+  // Updated register function to use departmentName instead of communityId
+  const register = async ({ email, password, username, role, departmentName }) => {
     try {
+      const payload = { email, password, username, role };
+
+      if (role === "admin" && departmentName) {
+        payload.departmentName = departmentName;
+      }
+
       const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, username, role, communityId }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -50,7 +57,6 @@ export const AuthProvider = ({ children }) => {
       throw err;
     }
   };
-
 
   const logout = async () => {
     await AsyncStorage.removeItem("token");
