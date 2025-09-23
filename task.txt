@@ -1,0 +1,87 @@
+👩‍💻 Team Division for 3 Developers
+person 1 – Citizen App (User Side, Mobile-first)
+
+Responsibilities
+
+Build Login/Register flow.
+
+Implement Report Submission Form:
+
+Image upload (camera/gallery).
+
+Location auto-fetch/map pin.
+
+Description input (text/voice).
+
+Create Report History Page (list + detail view with status).
+
+Implement Profile Page.
+
+Make UI fully responsive (mobile-first).
+
+Deliverables
+
+LoginPage.jsx, RegisterPage.jsx, ReportForm.jsx, ReportHistory.jsx, ProfilePage.jsx
+
+User context for authentication.
+
+Mobile styling with Tailwind.
+
+
+Person 2 – Admin Dashboard (Web Portal)
+
+Responsibilities
+
+Build Admin Login & Dashboard.
+
+Implement Live Map View of issues.
+
+Create Reports Table with Filters (status, category, location, priority).
+
+Build Report Detail Page (Admin) with actions:
+
+Assign department.
+
+Update status (In Progress, Resolved).
+
+Add notes/images.
+
+Integrate AI-priority label display.
+
+Deliverables
+
+Dashboard.jsx, ReportsTable.jsx, ReportDetailAdmin.jsx, AssignTaskModal.jsx
+
+Map component (MapComponent.jsx) integration with Leaflet/Google Maps.
+
+
+Person 3 – Shared Features + Analytics
+
+Responsibilities
+Implement Global Layout & Navigation:
+
+Navbar, Sidebar.
+
+Protected routes for citizen/admin.
+
+Build Notification System (push or in-app).
+
+Create Analytics Dashboard with charts:
+
+Reports per category/ward.
+
+Response times.
+
+Heatmaps.
+
+Handle Dark/Light Mode toggle + themes.
+
+Documentation of frontend setup & components.
+
+Deliverables
+
+Navbar.jsx, Sidebar.jsx, NotificationBell.jsx, AnalyticsPage.jsx.
+
+Charts with Recharts/Chart.js.
+
+Global styling + theming.
