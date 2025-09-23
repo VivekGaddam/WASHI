@@ -10,7 +10,9 @@ require('./config/passport')(passport);
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*", // or your frontend URL
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
