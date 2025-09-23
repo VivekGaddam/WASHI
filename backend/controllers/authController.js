@@ -4,11 +4,12 @@ const User = require('../models/User');
 const Department = require('../models/Department');
 
 exports.register = async (req, res, next) => {
+  console.log('Raw request body:', req.body);
   console.log('Register function called');
   console.log('Received request body:', req.body);
-      const { fullName, email, password, departments, role, location } = req.body;
+      const { username, email, password, departmentName, role, location } = req.body;
   
-      if (role === 'admin' && (!departments || departments.length === 0)) {
+      if (role === 'admin' && !departmentName) {
         console.log('Admin user requires department');
         return res.status(400).json({ message: 'Department is required for admin users' });
       }
@@ -27,24 +28,23 @@ exports.register = async (req, res, next) => {
         console.log('Password hashed.');
   
         const newUser = {
-          fullName,
+          username,
           email,
           password: hashed,
           role,
           isVerified: true, // for testing purposes
-          location // Include location here
         };
+
+        if (location) {
+          newUser.location = location;
+        }
   
         if (role === 'admin') {
-          if (departments && Array.isArray(departments) && departments.length > 0) {
-            const departmentDocs = await Department.find({ name: { $in: departments } });
-            if (departmentDocs.length !== departments.length) {
-              return res.status(400).json({ message: 'One or more departments not found.' });
-            }
-            newUser.departments = departmentDocs.map(dept => dept._id);
-          } else {
-            return res.status(400).json({ message: 'Admin user requires at least one department name.' });
+          const department = await Department.findOne({ name: departmentName });
+          if (!department) {
+            return res.status(400).json({ message: 'Department not found.' });
           }
+          newUser.departmentId = department._id;
         }
     console.log('New user object before saving:', newUser);
     console.log('Creating new user...');
@@ -57,21 +57,20 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
-
 exports.login = async (req, res, next) => {
   // Passport local strategy handles authentication
   // This function issues JWT after successful login
   if (!req.user) return res.status(401).json({ message: 'Invalid credentials' });
 
   // Fetch the user again to get department and location information
-  const userWithDetails = await User.findById(req.user.id).select('+departments +location'); // Select location as well
+  const userWithDetails = await User.findById(req.user.id).select('+departmentId +location'); // Select location as well
   console.log('User with details in login:', userWithDetails);
 
   const payload = {
     id: req.user.id,
     email: req.user.email,
     role: req.user.role,
-    departments: userWithDetails ? userWithDetails.departments : [],
+    departmentId: userWithDetails ? userWithDetails.departmentId : null,
     location: userWithDetails ? userWithDetails.location : null // Include location
   };
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });

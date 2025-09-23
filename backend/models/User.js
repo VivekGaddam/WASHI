@@ -23,9 +23,21 @@ const UserSchema = new mongoose.Schema(
     },
     departmentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Department", // reference to Department collection
+      ref: "Department",
       default: null,
     },
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: function() { return this.role === 'admin'; }
+      },
+      coordinates: {
+        type: [Number],
+        index: '2dsphere',
+        required: function() { return this.role === 'admin'; }
+      }
+    }
   },
   { timestamps: true }
 );

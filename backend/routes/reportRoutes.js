@@ -6,7 +6,8 @@ const {
   getReportById,
   updateReportStatus,
   addNoteToReport,
-  likeReport
+  likeReport,
+  getReportNotes
 } = require('../controllers/reportController');
 
 // Import middleware
@@ -30,7 +31,8 @@ router.route('/:id/status')
   .put(protect, admin, updateReportStatus);
 
 router.route('/:id/notes')
-  .post(protect, admin, addNoteToReport);
+  .post(protect, admin, addNoteToReport)
+  .get(getReportNotes);
 
 router.route('/:id/like').post(protect, likeReport);
 

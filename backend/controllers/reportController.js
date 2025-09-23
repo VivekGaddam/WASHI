@@ -88,14 +88,13 @@ const _fetchReportsData = async (req, reportId = null) => {
   }
 
   // Admin department filtering
-  if (req.user.role === 'admin' && req.user.department && req.user.department.length > 0) {
+  if (req.user.role === 'admin' && req.user.departmentId) {
     if (filter.assignedDepartment) {
-      if (!req.user.department.includes(filter.assignedDepartment.toString())) {
+      if (filter.assignedDepartment.toString() !== req.user.departmentId.toString()) {
         return { reports: [], total: 0, pagination: {} };
       }
-    }
-    else {
-      filter.assignedDepartment = { $in: req.user.department };
+    } else {
+      filter.assignedDepartment = req.user.departmentId;
     }
   }
 
@@ -195,9 +194,8 @@ exports.getReportById = async (req, res, next) => {
     const report = reports[0];
 
     // Authorization check: Only a user from the assigned department or a super admin can view
-    if (req.user.role === 'admin' && req.user.departments && req.user.departments.length > 0) {
-      const userDepartmentIds = req.user.departments.map(deptId => deptId.toString());
-      if (!report.assignedDepartment || !userDepartmentIds.includes(report.assignedDepartment._id.toString())) {
+    if (req.user.role === 'admin' && req.user.departmentId) {
+      if (!report.assignedDepartment || report.assignedDepartment._id.toString() !== req.user.departmentId.toString()) {
         return res.status(403).json({ success: false, message: 'You are not authorized to view this report.' });
       }
     }
@@ -228,9 +226,8 @@ exports.updateReportStatus = async (req, res, next) => {
     }
 
     // Authorization check
-    if (req.user.role === 'admin' && req.user.departments && req.user.departments.length > 0) {
-      const userDepartmentIds = req.user.departments.map(deptId => deptId.toString());
-      if (!report.assignedDepartment || !userDepartmentIds.includes(report.assignedDepartment._id.toString())) {
+    if (req.user.role === 'admin' && req.user.departmentId) {
+      if (!report.assignedDepartment || report.assignedDepartment._id.toString() !== req.user.departmentId.toString()) {
         return res.status(403).json({ success: false, message: 'You are not authorized to update this report.' });
       }
     }
@@ -276,9 +273,8 @@ exports.addNoteToReport = async (req, res, next) => {
     }
 
     // Authorization check
-    if (req.user.role === 'admin' && req.user.departments && req.user.departments.length > 0) {
-      const userDepartmentIds = req.user.departments.map(deptId => deptId.toString());
-      if (!report.assignedDepartment || !userDepartmentIds.includes(report.assignedDepartment._id.toString())) {
+    if (req.user.role === 'admin' && req.user.departmentId) {
+      if (!report.assignedDepartment || report.assignedDepartment._id.toString() !== req.user.departmentId.toString()) {
         return res.status(403).json({ success: false, message: 'You are not authorized to add notes to this report.' });
       }
     }
@@ -328,5 +324,26 @@ exports.likeReport = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Get all notes for a specific report
+// @route   GET /api/reports/:id/notes
+// @access  Public
+exports.getReportNotes = async (req, res, next) => {
+  try {
+    const report = await Report.findById(req.params.id).populate('notes.addedBy', 'fullName email');
+
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: report.notes.length,
+      data: report.notes
+    });
+  } catch (error) {
+    next(error);
   }
 };
