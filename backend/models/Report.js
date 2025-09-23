@@ -27,7 +27,8 @@ const ReportSchema = new mongoose.Schema({
     required: true
   },
   category: {
-    type: String
+    type: String,
+    required: true
   },
   location: {
     type: {
@@ -60,16 +61,8 @@ const ReportSchema = new mongoose.Schema({
     ref: 'Department'
   },
   notes: [noteSchema],
-  likes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  likeCount: {
-    type: Number,
-    default: 0
-  },
   images: [{
-    type: String
+    type: String // URLs to images
   }]
 }, { timestamps: true });
 
