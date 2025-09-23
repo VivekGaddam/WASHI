@@ -4,9 +4,9 @@ const {
   createReport,
   getReports,
   getReportById,
-  assignDepartment,
   updateReportStatus,
-  addNoteToReport
+  addNoteToReport,
+  likeReport
 } = require('../controllers/reportController');
 const Report = require('../models/Report');
 // Import middleware
@@ -46,13 +46,13 @@ router.route('/')
 router.route('/:id')
   .get(protect, admin, getReportById);
 
-router.route('/:id/assign')
-  .put(protect, admin, assignDepartment);
 
 router.route('/:id/status')
   .put(protect, admin, updateReportStatus);
 
 router.route('/:id/notes')
   .post(protect, admin, addNoteToReport);
+
+router.route('/:id/like').post(protect, likeReport);
 
 module.exports = router;
