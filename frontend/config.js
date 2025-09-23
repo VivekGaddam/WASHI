@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 
-export const API_URL = "http://192.168.0.184:5000"; 
+export const API_URL = "http://192.168.29.183:5000"; 
 // // For Android Emulator
 // if (Platform.OS === "android") {
 //   baseURL = "http://10.0.2.2:5000/api";
