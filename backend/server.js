@@ -1,41 +1,71 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const path = require('path');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
 
-dotenv.config();
+// --- Route Imports ---
+const authRoutes = require('./routes/authRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 require('./config/passport')(passport);
 
 const app = express();
 
+// --- Core Middleware ---
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// --- Session and Passport Middleware ---
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
 }));
-
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+// --- API Routes ---
+app.use('/auth', authRoutes);
+app.use('/api/reports', reportRoutes);
 
-app.use('/auth', require('./routes/authRoutes'));
+// --- Error Handling Middleware ---
+// 404 Not Found Handler
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+});
 
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ error: err.message });
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode);
+  res.json({
+    message: err.message,
+    // Hide stack trace in production
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
 });
 
-const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5001; // Using 5001 as the default
+
+const startServer = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB connected successfully.');
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1); // Exit process with failure
+  }
+};
+
+startServer();
