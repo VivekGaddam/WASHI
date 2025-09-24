@@ -4,10 +4,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import AdminProfile from 'C:/programming_Ruthvik/sih/frontend/app/admin/AdminProfile.jsx';
-import AdminExplore from 'C:/programming_Ruthvik/sih/frontend/app/admin/AdminExplore';
-import AdminReports from 'C:/programming_Ruthvik/sih/frontend/app/admin/AdminReports';
-import ReportDetails from 'C:/programming_Ruthvik/sih/frontend/app/admin/ReportDetails';
+import AdminProfile from '../../admin/AdminProfile';
+import AdminExplore from '../../admin/AdminExplore';
+import AdminReports from '../../admin/AdminReports';
+import ReportDetails from '../../admin/ReportDetails';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
