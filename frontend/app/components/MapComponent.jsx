@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -61,15 +61,16 @@ export default function MapComponent({ coords, isFullScreen, setIsFullScreen }) 
         ))}
       </MapView>
 
-      {/* Fullscreen toggle */}
+      {/* Expand Button (when minimized) */}
       {!isFullScreen && (
-        <TouchableOpacity style={styles.expandButton} onPress={() => setIsFullScreen(true)}>
+        <TouchableOpacity style={styles.expandButton} onPress={() => { setIsFullScreen(true);}}>
           <Text style={styles.expandText}>Expand Map</Text>
         </TouchableOpacity>
       )}
 
+      {/* Back Button (when fullscreen) */}
       {isFullScreen && (
-        <TouchableOpacity style={styles.backButton} onPress={() => setIsFullScreen(false)}>
+        <TouchableOpacity style={styles.backButton} onPress={() => { setIsFullScreen(false);}}>
           <Ionicons name="arrow-back" size={28} color="#fff" />
         </TouchableOpacity>
       )}
@@ -78,7 +79,11 @@ export default function MapComponent({ coords, isFullScreen, setIsFullScreen }) 
       {selectedReport && (
         <View style={styles.infoPanel}>
           <View style={styles.infoPanelHeader}>
-            <Ionicons name={getMarkerIcon(selectedReport.type)} size={24} color={getMarkerColor(selectedReport.type)} />
+            <Ionicons
+              name={getMarkerIcon(selectedReport.type)}
+              size={24}
+              color={getMarkerColor(selectedReport.type)}
+            />
             <Text style={styles.infoPanelTitle}>{selectedReport.title}</Text>
             <TouchableOpacity onPress={() => setSelectedReport(null)}>
               <Ionicons name="close" size={24} color="#95A5A6" />
@@ -117,14 +122,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   expandText: { color: "#fff", fontWeight: "bold" },
-  backButton: {
-    position: "absolute",
-    top: 40,
-    left: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 6,
-    borderRadius: 20,
-  },
+backButton: {
+  position: "absolute",
+  top: "5%",         // middle of the screen
+  left: "3%",        // middle-ish horizontally
+  backgroundColor: "red",  // bright color for testing
+  padding: 12,
+  borderRadius: 8,
+  zIndex: 999,
+  elevation: 5,
+},
   customMarker: { padding: 6, borderRadius: 6 },
   infoPanel: {
     position: "absolute",

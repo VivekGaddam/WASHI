@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../../context/AuthContext";
-import NormalUserHome from "./NormalUserHome.jsx";
+import UserHome from "./UserHome.jsx";
 import AdminHome from "./AdminHome.jsx";
 
 export default function Home() {
@@ -13,6 +13,6 @@ export default function Home() {
       return <AdminHome />;
     case "user":
     default:
-      return <NormalUserHome />;
+      return <UserHome />;
   }
 }
