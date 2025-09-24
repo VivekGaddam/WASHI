@@ -62,7 +62,7 @@ const ReportSchema = new mongoose.Schema({
   },
   notes: [noteSchema],
   images: [{
-    type: String // URLs to images
+    type: String 
   }]
 }, { timestamps: true });
 

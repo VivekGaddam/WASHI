@@ -96,3 +96,9 @@ exports.login = async (req, res, next) => {
 
   res.json({ token, user: payload });
 };
+
+exports.logout = (req, res) => {
+  // On the client side, the token should be deleted.
+  // This server-side function is primarily for acknowledging the logout action.
+  res.status(200).json({ message: "Logged out successfully" });
+};

@@ -1,12 +1,15 @@
 const express = require('express');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const { register, login } = require('../controllers/authController');
+const { register, login, logout } = require('../controllers/authController');
 const User = require('../models/User'); 
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 // Registration route
 router.post("/register", register);
+
+
+router.post("/logout", logout);
 
 
 router.post('/login', (req, res, next) => {
